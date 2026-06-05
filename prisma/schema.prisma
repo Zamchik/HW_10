@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique @map("email")
+  name      String    @map("name")
+  role      String    @default("user") @map("role")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  posts     Post[]
+  comments  Comment[]
+
+  @@map("users")
+}
+
+model Post {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  title     String    @map("title")
+  body      String?   @map("body")
+  status    String    @default("draft") @map("status")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments  Comment[]
+  tags      PostTag[]
+
+  @@map("posts")
+}
+
+model Comment {
+  id        Int       @id @default(autoincrement())
+  postId    Int       @map("post_id")
+  authorId  Int?      @map("author_id")
+  body      String    @map("body")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@map("comments")
+}
+
+model Tag {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique @map("name")
+
+  posts     PostTag[]
+
+  @@map("tags")
+}
+
+model PostTag {
+  postId    Int       @map("post_id")
+  tagId     Int       @map("tag_id")
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag       Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@map("post_tags")
+}
