@@ -7,6 +7,7 @@
 Ответ: Когда ты сначала делаешь один запрос к базе, чтобы получить список (например, все посты), а потом для каждого элемента из этого списка делаешь ещё по одному запросу (например, чтобы узнать автора). Итоговое количество запросов = 1 + N, где N — количество записей. Если постов 100, будет 101 запрос — очень медленно.
 
 Плохо  пример:
+```javascript
 async function badExample() {
   const posts = await prisma.post.findMany();
   for (const post of posts) {
@@ -14,8 +15,9 @@ async function badExample() {
     console.log(`"${post.title}" by ${user.name}`);
   }
 }
-
+```
 Хороший пример: 
+```javascript
 async function goodExample() {
   const posts = await prisma.post.findMany({
     include: { user: { select: { name: true } } },
@@ -24,7 +26,7 @@ async function goodExample() {
     console.log(`"${post.title}" by ${post.user.name}`);
   }
 }
-
+```
 3. Когда выбрать Knex, а когда Prisma?
 
 Ответ: Knex когда нужны сложные и нестандартные SQL-запросы. Например, BI-отчёты с оконными функциями, сложные агрегации или кастомные JOIN, которые ORM может сгенерировать неэффективно. Knex даёт полный контроль над SQL.
@@ -42,12 +44,12 @@ prisma migrate deploy – используется на продакшене.
 5. Как Knex защищает от SQL-инъекций?
 
 Ответ: Knex защищает через параметризованные запросы (плэйсхолдеры).
-
+```javascript
 const user = await db('users').where({ email: email }).first();
-
+```
 Knex не вставляет значение email прямо в строку SQL.
-
+```javascript
 SELECT * FROM users WHERE email = $1
-
+```
 А значение email передаётся отдельно как параметр. База данных обрабатывает его как данные, а не как код.
 Поэтому даже если злоумышленник передаст email = "'; DROP TABLE users; --", это значение останется просто строкой (например, поиск пользователя с таким странным email), и команда DROP TABLE не выполнится.
